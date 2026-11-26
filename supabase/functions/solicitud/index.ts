@@ -43,8 +43,9 @@ Deno.serve(async (req) => {
   if (error) return json(req, { error: "error_servidor" }, 500);
 
   // Aviso por Telegram. Si falla, la solicitud queda guardada igualmente y se ve en el panel.
-  const token = Deno.env.get("TELEGRAM_BOT_TOKEN");
-  const chat = Deno.env.get("TELEGRAM_CHAT_ID");
+  // Limpia errores típicos al copiar: espacios, saltos de línea o la palabra «bot» delante
+  const token = (Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "").replace(/\s+/g, "").replace(/^bot(?=\d)/i, "");
+  const chat = (Deno.env.get("TELEGRAM_CHAT_ID") ?? "").replace(/\s+/g, "");
   if (token && chat) {
     const panel = Deno.env.get("ADMIN_URL");
     const texto = [
@@ -61,7 +62,11 @@ Deno.serve(async (req) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_id: chat, text: texto, disable_web_page_preview: true }),
       });
-      if (!r.ok) console.error("Telegram respondió", r.status, await r.text());
+      if (!r.ok) {
+        // Solo la forma del token, nunca su valor, para poder diagnosticar
+        const forma = { longitud: token.length, dosPuntos: token.includes(":"), empiezaPorNumero: /^\d+:/.test(token) };
+        console.error("Telegram respondió", r.status, await r.text(), JSON.stringify(forma));
+      }
     } catch (e) {
       console.error("No se pudo avisar por Telegram", e);
     }
