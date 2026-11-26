@@ -101,7 +101,11 @@ Deno.serve(async (req) => {
 
     case "nueva_clave": {
       const clave = nuevaClave();
-      const { error } = await servicio.auth.admin.updateUserById(uid, { password: clave });
+      // Conserva sus datos y marca la clave como temporal para que la app ofrezca cambiarla
+      const { data: actual } = await servicio.auth.admin.getUserById(uid);
+      const { error } = await servicio.auth.admin.updateUserById(uid, {
+        password: clave, user_metadata: { ...(actual?.user?.user_metadata ?? {}), clave_temporal: true },
+      });
       return error ? json(req, { error: error.message }, 400) : json(req, { clave });
     }
 

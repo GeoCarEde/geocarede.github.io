@@ -39,6 +39,12 @@ El acceso es con email y clave. **Cada clave funciona en un solo dispositivo.**
 - Al aprobar (en Telegram o en el panel), si el usuario conectó su Telegram, el bot le envía la clave directamente.
 - Un bot de Telegram no puede escribir a alguien que no le haya escrito antes. Por eso hace falta que el usuario pulse el enlace.
 
+## Contraseña
+
+- Las claves que genera el sistema (al aprobar, en el alta manual o con «Nueva clave») son **temporales**. La primera vez que el usuario entra con una de ellas, la app le propone elegir su propia contraseña (mínimo 8 caracteres). Puede dejarlo para más tarde.
+- En cualquier momento puede cambiarla con el botón de la **llave** que hay junto al mapa.
+- Si alguien olvida su contraseña, pulsa **Nueva clave** en el panel y envíasela. Al entrar se le volverá a proponer el cambio.
+
 ## Panel: acciones sobre cada licencia
 
 - **Liberar dispositivo:** para cuando el usuario cambia de móvil o borra los datos del navegador.

@@ -57,7 +57,9 @@ export const hoy = () => new Date().toISOString().slice(0, 10);
 export async function altaUsuario(email: string, nombre: string | null, telefono: string | null, caduca: string | null) {
   const clave = nuevaClave();
   const { data, error } = await servicio.auth.admin.createUser({
-    email, password: clave, email_confirm: true, user_metadata: { nombre, telefono },
+    email, password: clave, email_confirm: true,
+    // clave_temporal: la app ofrece cambiarla en la primera entrada
+    user_metadata: { nombre, telefono, clave_temporal: true },
   });
   if (error) {
     const yaExiste = /already|registered|exists/i.test(error.message);
@@ -105,7 +107,7 @@ export async function secretoWebhook(): Promise<string> {
 
 // Texto listo para reenviar al usuario con su acceso
 export function mensajeAcceso(email: string, clave: string): string {
-  return `Tu acceso a CCTT Granada:\nEmail: ${email}\nClave: ${clave}\n\nAbre ${APP_URL} e inicia sesión. La clave queda vinculada al primer dispositivo en el que entres.`;
+  return `Tu acceso a CCTT Granada:\nEmail: ${email}\nClave: ${clave}\n\nAbre ${APP_URL} e inicia sesión. Al entrar podrás elegir tu propia contraseña. El acceso queda vinculado al primer dispositivo en el que entres.`;
 }
 
 // Nombre de usuario del bot (para el enlace «Recibir respuesta por Telegram»).

@@ -97,7 +97,8 @@
   // ---------- interfaz ----------
   function mostrar(vista) {
     pantalla.hidden = false;
-    ['entrar', 'solicitar', 'enviada'].forEach(v => { $('v-' + v).hidden = v !== vista; });
+    ['entrar', 'solicitar', 'enviada', 'clave'].forEach(v => { $('v-' + v).hidden = v !== vista; });
+    $('pestanas').hidden = vista === 'clave';
     $('t-entrar').setAttribute('aria-selected', vista === 'entrar');
     $('t-solicitar').setAttribute('aria-selected', vista !== 'entrar');
     aviso('');
@@ -118,8 +119,53 @@
     btn.disabled = false;
     if (error) return aviso(/invalid/i.test(error.message) ? 'Email o clave incorrectos.' : 'No se pudo entrar: ' + error.message, true);
     $('a-clave').value = '';
+    // Primera entrada con la clave automática: ofrecer elegir una contraseña propia
+    if (data.user?.user_metadata?.clave_temporal) return pedirClave(data.session, true);
     cargar(data.session);
   });
+
+  // ---------- cambio de contraseña ----------
+  let trasCambio = null; // qué hacer al terminar (o al pulsar «Más tarde»)
+  function pedirClave(session, primeraVez) {
+    mostrar('clave');
+    $('clave-intro').textContent = primeraVez
+      ? 'Elige tu propia contraseña para sustituir la clave que te enviamos.'
+      : 'Escribe tu contraseña nueva.';
+    $('c-luego').textContent = primeraVez ? 'Más tarde' : 'Cancelar';
+    trasCambio = session ? () => cargar(session) : () => { pantalla.hidden = true; };
+    setTimeout(() => $('c-nueva').focus(), 50);
+  }
+  window.cambiarClave = () => pedirClave(null, false);
+  $('c-luego').onclick = () => { $('f-clave').reset(); trasCambio && trasCambio(); };
+
+  $('f-clave').addEventListener('submit', async e => {
+    e.preventDefault();
+    const nueva = $('c-nueva').value, repite = $('c-repite').value;
+    if (nueva.length < 8) return aviso('La contraseña debe tener al menos 8 caracteres.', true);
+    if (nueva !== repite) return aviso('Las dos contraseñas no coinciden.', true);
+    const btn = e.submitter || e.target.querySelector('button[type=submit]');
+    btn.disabled = true; aviso('Guardando…');
+    const { error } = await sb.auth.updateUser({ password: nueva, data: { clave_temporal: false } });
+    btn.disabled = false;
+    if (error) {
+      const msg = /different|same/i.test(error.message) ? 'La contraseña nueva tiene que ser distinta de la actual.'
+        : /weak|short|characters/i.test(error.message) ? 'Esa contraseña es demasiado débil. Prueba con una más larga.'
+        : /network|fetch/i.test(error.message) ? 'Sin conexión. Inténtalo cuando tengas cobertura.'
+        : 'No se pudo cambiar: ' + error.message;
+      return aviso(msg, true);
+    }
+    $('f-clave').reset();
+    const seguir = trasCambio;
+    if (seguir) seguir();
+    toastAcceso('Contraseña cambiada. Úsala la próxima vez que entres.');
+  });
+
+  function toastAcceso(msg) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg; t.hidden = false;
+    setTimeout(() => { t.hidden = true; }, 3200);
+  }
 
   $('f-solicitar').addEventListener('submit', async e => {
     e.preventDefault();

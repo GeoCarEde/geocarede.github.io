@@ -268,4 +268,5 @@ function fromHash(){
 }
 window.addEventListener('hashchange', fromHash); fromHash();
 document.getElementById('b-salir').addEventListener('click', () => window.cerrarSesion && window.cerrarSesion());
+document.getElementById('b-clave').addEventListener('click', () => window.cambiarClave && window.cambiarClave());
 };

@@ -46,6 +46,9 @@
     <button class="iconbtn" id="b-loc" type="button" aria-label="Centrar en mi ubicación" title="Mi ubicación">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
     </button>
+    <button class="iconbtn" id="b-clave" type="button" aria-label="Cambiar contraseña" title="Cambiar contraseña">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 20 3M16 7l3 3M14 9l2 2"/></svg>
+    </button>
     <button class="iconbtn" id="b-salir" type="button" aria-label="Cerrar sesión" title="Cerrar sesión">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5M5 12h11"/></svg>
     </button>
@@ -59,7 +62,7 @@
 <div id="acceso" hidden>
   <div class="acceso-caja">
     <div class="marca"><img src="icons/icon-192.png" alt="" width="44" height="44"><div><strong>CCTT Granada</strong><span>Localiza centros de transformación, maniobras y apoyos y navega hasta ellos.</span></div></div>
-    <div class="pestanas" role="tablist">
+    <div class="pestanas" id="pestanas" role="tablist">
       <button id="t-entrar" type="button" role="tab" aria-selected="true">Entrar</button>
       <button id="t-solicitar" type="button" role="tab" aria-selected="false">Solicitar acceso</button>
     </div>
@@ -90,6 +93,19 @@
         <button class="navbtn primary" type="submit">Enviar solicitud</button>
       </form>
       <p class="hint">Revisaremos tu solicitud y te enviaremos la clave.</p>
+    </div>
+
+    <div id="v-clave" hidden>
+      <form id="f-clave">
+        <p class="clave-intro" id="clave-intro">Elige tu propia contraseña para sustituir la clave que te enviamos.</p>
+        <label for="c-nueva">Contraseña nueva</label>
+        <input id="c-nueva" type="password" autocomplete="new-password" minlength="8" required>
+        <label for="c-repite">Repítela</label>
+        <input id="c-repite" type="password" autocomplete="new-password" minlength="8" required>
+        <button class="navbtn primary" type="submit">Guardar contraseña</button>
+        <button class="navbtn" id="c-luego" type="button">Más tarde</button>
+      </form>
+      <p class="hint">Mínimo 8 caracteres. Cambiar la contraseña no cambia el dispositivo vinculado.</p>
     </div>
 
     <div id="v-enviada" hidden>
