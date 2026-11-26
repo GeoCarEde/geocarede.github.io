@@ -13,29 +13,10 @@
 //   nueva_clave { user_id }                 → genera y devuelve una clave nueva
 //   eliminar  { user_id }
 // POST binario (Content-Type: application/octet-stream) → sustituye el archivo de ubicaciones
-import { cors, json, nuevaClave, servicio, usuarioDe } from "../_shared/comun.ts";
+import { altaUsuario, cors, json, nuevaClave, servicio, usuarioDe } from "../_shared/comun.ts";
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 const fecha = (v: unknown) => (typeof v === "string" && FECHA.test(v) ? v : null);
-
-async function altaUsuario(email: string, nombre: string | null, telefono: string | null, caduca: string | null) {
-  const clave = nuevaClave();
-  const { data, error } = await servicio.auth.admin.createUser({
-    email, password: clave, email_confirm: true, user_metadata: { nombre, telefono },
-  });
-  if (error) {
-    const yaExiste = /already|registered|exists/i.test(error.message);
-    return { error: yaExiste ? "ya_existe" : error.message };
-  }
-  const { error: e2 } = await servicio.from("licencias").insert({
-    user_id: data.user.id, email, nombre, telefono, caduca,
-  });
-  if (e2) {
-    await servicio.auth.admin.deleteUser(data.user.id);
-    return { error: e2.message };
-  }
-  return { user_id: data.user.id, email, clave };
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors(req) });

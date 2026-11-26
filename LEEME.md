@@ -23,8 +23,8 @@ El acceso es con email y clave. **Cada clave funciona en un solo dispositivo.**
 ## Flujo de alta
 
 1. El usuario rellena **Solicitar acceso** en la app con su nombre, email y teléfono.
-2. Te llega un **aviso por Telegram**.
-3. En el panel pulsas **Aprobar**. Se genera una clave, que puedes enviarle por WhatsApp o Telegram desde el propio panel.
+2. Te llega un **aviso por Telegram** con los botones **✅ Aprobar** y **❌ Rechazar**.
+3. Pulsas **Aprobar** en Telegram, o en el panel. Se genera una clave y el bot te la envía con botones para reenviársela al usuario por WhatsApp o Telegram. Las solicitudes aprobadas desde Telegram no tienen caducidad; si quieres ponerle una, hazlo después en el panel.
 4. El usuario entra con su email y su clave. Ese dispositivo queda vinculado.
 
 ## Panel: acciones sobre cada licencia
@@ -55,6 +55,7 @@ Los usuarios reciben los datos nuevos la próxima vez que abren la app.
    2. Escribe cualquier cosa a tu bot.
    3. Abre `https://api.telegram.org/bot<TOKEN>/getUpdates` y copia `chat.id`.
    4. En Supabase, *Edge Functions → Secrets*, crea `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` y, si quieres, `ADMIN_URL` (la dirección del panel).
+   5. Para activar los botones, abre una vez `https://<proyecto>.supabase.co/functions/v1/telegram?accion=configurar`. **Si cambias el token del bot, vuelve a abrir esa dirección.**
 6. **(Opcional)** Crea el secreto `ORIGENES_PERMITIDOS` con `https://jmmoreno0786.github.io` para que solo tu app pueda llamar a las funciones.
 7. Entra en el panel y **publica las ubicaciones** subiendo los KMZ.
 

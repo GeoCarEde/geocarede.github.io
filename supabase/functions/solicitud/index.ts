@@ -5,7 +5,7 @@
 //   TELEGRAM_BOT_TOKEN  token del bot que da @BotFather
 //   TELEGRAM_CHAT_ID    tu identificador de chat de Telegram
 //   ADMIN_URL           (opcional) dirección del panel, para incluir el enlace en el aviso
-import { cors, json, servicio } from "../_shared/comun.ts";
+import { cors, json, servicio, telegram, tgChat, tgToken } from "../_shared/comun.ts";
 
 const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
 const limpiar = (v: unknown, max: number) => String(v ?? "").replace(/[\u0000-\u001f]/g, " ").trim().slice(0, max);
@@ -39,14 +39,13 @@ Deno.serve(async (req) => {
   ]);
   if ((porEmail ?? 0) >= 3 || (porIp ?? 0) >= 10) return json(req, { error: "demasiadas" }, 429);
 
-  const { error } = await servicio.from("solicitudes").insert({ nombre, email, telefono, mensaje, ip });
-  if (error) return json(req, { error: "error_servidor" }, 500);
+  const { data: fila, error } = await servicio.from("solicitudes")
+    .insert({ nombre, email, telefono, mensaje, ip }).select("id").single();
+  if (error || !fila) return json(req, { error: "error_servidor" }, 500);
 
-  // Aviso por Telegram. Si falla, la solicitud queda guardada igualmente y se ve en el panel.
-  // Limpia errores típicos al copiar: espacios, saltos de línea o la palabra «bot» delante
-  const token = (Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "").replace(/\s+/g, "").replace(/^bot(?=\d)/i, "");
-  const chat = (Deno.env.get("TELEGRAM_CHAT_ID") ?? "").replace(/\s+/g, "");
-  if (token && chat) {
+  // Aviso por Telegram con botones para aprobar o rechazar desde el propio chat.
+  // Si falla, la solicitud queda guardada igualmente y se ve en el panel.
+  if (tgToken() && tgChat()) {
     const panel = Deno.env.get("ADMIN_URL");
     const texto = [
       "🔑 Nueva solicitud de acceso",
@@ -54,19 +53,16 @@ Deno.serve(async (req) => {
       `Email: ${email}`,
       `Teléfono: ${telefono}`,
       mensaje ? `Mensaje: ${mensaje}` : "",
-      panel ? `\nAprobar en el panel: ${panel}` : "",
+      panel ? `\nPanel: ${panel}` : "",
     ].filter(Boolean).join("\n");
     try {
-      const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chat, text: texto, disable_web_page_preview: true }),
+      await telegram("sendMessage", {
+        chat_id: tgChat(), text: texto, disable_web_page_preview: true,
+        reply_markup: { inline_keyboard: [[
+          { text: "✅ Aprobar", callback_data: `ap:${fila.id}` },
+          { text: "❌ Rechazar", callback_data: `re:${fila.id}` },
+        ]] },
       });
-      if (!r.ok) {
-        // Solo la forma del token, nunca su valor, para poder diagnosticar
-        const forma = { longitud: token.length, dosPuntos: token.includes(":"), empiezaPorNumero: /^\d+:/.test(token) };
-        console.error("Telegram respondió", r.status, await r.text(), JSON.stringify(forma));
-      }
     } catch (e) {
       console.error("No se pudo avisar por Telegram", e);
     }

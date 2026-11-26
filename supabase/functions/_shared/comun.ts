@@ -52,3 +52,58 @@ export function nuevaClave(longitud = 10): string {
 }
 
 export const hoy = () => new Date().toISOString().slice(0, 10);
+
+// Crea el usuario (email + clave nueva) y su licencia. Lo usan el panel y el bot de Telegram.
+export async function altaUsuario(email: string, nombre: string | null, telefono: string | null, caduca: string | null) {
+  const clave = nuevaClave();
+  const { data, error } = await servicio.auth.admin.createUser({
+    email, password: clave, email_confirm: true, user_metadata: { nombre, telefono },
+  });
+  if (error) {
+    const yaExiste = /already|registered|exists/i.test(error.message);
+    return { error: yaExiste ? "ya_existe" : error.message };
+  }
+  const { error: e2 } = await servicio.from("licencias").insert({
+    user_id: data.user.id, email, nombre, telefono, caduca,
+  });
+  if (e2) {
+    await servicio.auth.admin.deleteUser(data.user.id);
+    return { error: e2.message };
+  }
+  return { user_id: data.user.id, email, clave };
+}
+
+// ---------- Telegram ----------
+// Limpia errores típicos al copiar el token: espacios, saltos de línea o la palabra «bot» delante
+export const tgToken = () => (Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "").replace(/\s+/g, "").replace(/^bot(?=\d)/i, "");
+export const tgChat = () => (Deno.env.get("TELEGRAM_CHAT_ID") ?? "").replace(/\s+/g, "");
+export const APP_URL = Deno.env.get("APP_URL") ?? "https://jmmoreno0786.github.io/GEO-CAR-EDE/";
+
+export async function telegram(metodo: string, datos: Record<string, unknown>) {
+  const token = tgToken();
+  if (!token) return null;
+  const r = await fetch(`https://api.telegram.org/bot${token}/${metodo}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datos),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    // Solo la forma del token, nunca su valor, para poder diagnosticar
+    const forma = { longitud: token.length, dosPuntos: token.includes(":"), empiezaPorNumero: /^\d+:/.test(token) };
+    console.error("Telegram", metodo, r.status, JSON.stringify(j), JSON.stringify(forma));
+  }
+  return j;
+}
+
+// Secreto que Telegram envía en cada llamada al webhook. Se deriva del token del bot,
+// así no hace falta guardar otro secreto y nadie que no conozca el token puede imitarlo.
+export async function secretoWebhook(): Promise<string> {
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("geo-car-ede:" + tgToken()));
+  return Array.from(new Uint8Array(h), (b) => b.toString(16).padStart(2, "0")).join("").slice(0, 48);
+}
+
+// Texto listo para reenviar al usuario con su acceso
+export function mensajeAcceso(email: string, clave: string): string {
+  return `Tu acceso a CCTT Granada:\nEmail: ${email}\nClave: ${clave}\n\nAbre ${APP_URL} e inicia sesión. La clave queda vinculada al primer dispositivo en el que entres.`;
+}
