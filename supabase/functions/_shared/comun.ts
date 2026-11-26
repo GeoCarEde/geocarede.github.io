@@ -107,3 +107,50 @@ export async function secretoWebhook(): Promise<string> {
 export function mensajeAcceso(email: string, clave: string): string {
   return `Tu acceso a CCTT Granada:\nEmail: ${email}\nClave: ${clave}\n\nAbre ${APP_URL} e inicia sesión. La clave queda vinculada al primer dispositivo en el que entres.`;
 }
+
+// Nombre de usuario del bot (para el enlace «Recibir respuesta por Telegram»).
+// Se pide una vez a Telegram y se guarda mientras la función esté activa.
+let _botUser: string | null = null;
+export async function botUsuario(): Promise<string | null> {
+  if (_botUser) return _botUser;
+  const j = await telegram("getMe", {}).catch(() => null);
+  _botUser = j?.result?.username ?? null;
+  return _botUser;
+}
+
+// Código aleatorio para enlazar una solicitud con el Telegram de quien la hace
+export function tokenCorto(longitud = 24): string {
+  const abc = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  return Array.from(crypto.getRandomValues(new Uint8Array(longitud)), (b) => abc[b % abc.length]).join("");
+}
+
+// Mensaje de pago escrito por el administrador en el panel. {nombre} se sustituye.
+export async function mensajePago(nombre: string | null): Promise<string> {
+  const { data } = await servicio.from("ajustes").select("valor").eq("clave", "mensaje_pago").maybeSingle();
+  const plantilla = (data?.valor ?? "").trim();
+  return plantilla ? plantilla.replaceAll("{nombre}", nombre || "") : "";
+}
+
+// Teléfono en formato internacional (añade 34 a los números españoles de 9 cifras)
+export function telInternacional(telefono: string | null): string {
+  const t = String(telefono ?? "").replace(/\D/g, "");
+  return t.length === 9 ? "34" + t : t;
+}
+
+// Guarda que un mensaje del chat del administrador pertenece a una solicitud,
+// para que al «Responder» a él la respuesta llegue al solicitante.
+export async function vincularMensaje(adminMsg: { result?: { message_id?: number } } | null, solicitudId: number) {
+  const id = adminMsg?.result?.message_id;
+  if (id) await servicio.from("tg_relay").upsert({ admin_msg_id: id, solicitud_id: solicitudId });
+}
+
+// Envía la clave directamente al solicitante si conectó su Telegram. Devuelve true si se envió.
+export async function enviarClaveAlSolicitante(s: { tg_chat_id: number | null; nombre: string | null }, email: string, clave: string) {
+  if (!s.tg_chat_id) return false;
+  const r = await telegram("sendMessage", {
+    chat_id: s.tg_chat_id,
+    text: `✅ ${s.nombre ? s.nombre + ", tu" : "Tu"} acceso está listo.\n\n${mensajeAcceso(email, clave)}`,
+    disable_web_page_preview: true,
+  });
+  return !!r?.ok;
+}

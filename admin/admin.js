@@ -76,6 +76,7 @@
         <span class="dato">${esc(s.email)}</span>
         <span class="dato"><a href="tel:${esc(s.telefono.replace(/[^\d+]/g, ''))}">${esc(s.telefono)}</a></span>
         ${s.mensaje ? `<span class="msg">«${esc(s.mensaje)}»</span>` : ''}
+        ${s.telegram ? '<span class="pill ok" style="align-self:flex-start;text-transform:none;letter-spacing:0">📲 Telegram conectado</span>' : ''}
         <span class="fecha">${fecha(s.creada_en)}</span>
         <div class="acc">
           <label>Caduca <input type="date" class="cad" min="${hoy()}"></label>
@@ -108,6 +109,7 @@
     }).join('') : '<tr><td colspan="6" class="vacio">Todavía no hay licencias.</td></tr>';
     $('licencias').dataset.json = JSON.stringify(d.licencias.map(l => [l.user_id, l.activa, l.email]));
 
+    if (document.activeElement !== $('p-texto')) $('p-texto').value = d.mensaje_pago || '';
     $('datos-fecha').textContent = d.datos ? 'Ubicaciones publicadas por última vez: ' + fecha(d.datos) : 'Todavía no se han publicado ubicaciones: la app no funcionará hasta que lo hagas.';
   }
 
@@ -129,7 +131,7 @@
       <strong>${esc(titulo)}</strong>
       <span>${esc(r.email)}</span>
       <span class="clave" id="clave-txt">${esc(r.clave)}</span>
-      <span class="vacio">Esta clave solo se muestra ahora. Envíasela al usuario.</span>
+      <span class="vacio">${r.enviadaTelegram ? '📲 Ya se la he enviado por Telegram. Esta clave solo se muestra ahora.' : 'Esta clave solo se muestra ahora. Envíasela al usuario.'}</span>
       <div class="acc">
         <button class="btn prim" id="c-copiar" type="button">Copiar mensaje</button>
         ${telInt ? `<a class="btn" href="https://wa.me/${telInt}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Enviar por WhatsApp</a>` : ''}
@@ -182,6 +184,12 @@
     if (!e.target.classList.contains('cad')) return;
     const uid = e.target.closest('tr').dataset.uid;
     try { await llamar({ accion: 'caducidad', user_id: uid, caduca: e.target.value || null }); aviso('Caducidad guardada.'); await cargar(); }
+    catch (err) { fallo(err); }
+  });
+
+  $('f-pago').addEventListener('submit', async e => {
+    e.preventDefault();
+    try { await llamar({ accion: 'ajustes', mensaje_pago: $('p-texto').value }); aviso('Mensaje de pago guardado.'); }
     catch (err) { fallo(err); }
   });
 

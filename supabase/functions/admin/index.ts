@@ -12,8 +12,9 @@
 //   caducidad { user_id, caduca }           → fecha AAAA-MM-DD o null
 //   nueva_clave { user_id }                 → genera y devuelve una clave nueva
 //   eliminar  { user_id }
+//   ajustes   { mensaje_pago }              → guarda el mensaje de pago que envía el bot
 // POST binario (Content-Type: application/octet-stream) → sustituye el archivo de ubicaciones
-import { altaUsuario, cors, json, nuevaClave, servicio, usuarioDe } from "../_shared/comun.ts";
+import { altaUsuario, cors, enviarClaveAlSolicitante, json, nuevaClave, servicio, usuarioDe } from "../_shared/comun.ts";
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 const fecha = (v: unknown) => (typeof v === "string" && FECHA.test(v) ? v : null);
@@ -45,14 +46,17 @@ Deno.serve(async (req) => {
       return json(req, { ok: true, email: user.email });
 
     case "listar": {
-      const [lic, sol] = await Promise.all([
+      const [lic, sol, aj] = await Promise.all([
         servicio.from("licencias").select("*").order("creada_en", { ascending: false }),
-        servicio.from("solicitudes").select("*").order("creada_en", { ascending: false }).limit(200),
+        servicio.from("solicitudes").select("id, nombre, email, telefono, mensaje, estado, creada_en, tg_chat_id")
+          .order("creada_en", { ascending: false }).limit(200),
+        servicio.from("ajustes").select("valor").eq("clave", "mensaje_pago").maybeSingle(),
       ]);
       const { data: archivo } = await servicio.storage.from("datos").list("", { search: "datos.json.gz" });
       return json(req, {
         licencias: lic.data ?? [],
-        solicitudes: sol.data ?? [],
+        solicitudes: (sol.data ?? []).map(({ tg_chat_id, ...s }) => ({ ...s, telegram: !!tg_chat_id })),
+        mensaje_pago: aj.data?.valor ?? "",
         datos: archivo?.find((f) => f.name === "datos.json.gz")?.updated_at ?? null,
       });
     }
@@ -64,7 +68,8 @@ Deno.serve(async (req) => {
       const r = await altaUsuario(s.email, s.nombre || null, s.telefono, fecha(b.caduca));
       if ("error" in r) return json(req, r, 400);
       await servicio.from("solicitudes").update({ estado: "aprobada" }).eq("id", s.id);
-      return json(req, { ...r, telefono: s.telefono, nombre: s.nombre });
+      const enviadaTelegram = await enviarClaveAlSolicitante(s, r.email, r.clave);
+      return json(req, { ...r, telefono: s.telefono, nombre: s.nombre, enviadaTelegram });
     }
 
     case "rechazar": {
@@ -98,6 +103,13 @@ Deno.serve(async (req) => {
       const clave = nuevaClave();
       const { error } = await servicio.auth.admin.updateUserById(uid, { password: clave });
       return error ? json(req, { error: error.message }, 400) : json(req, { clave });
+    }
+
+    case "ajustes": {
+      const valor = String(b.mensaje_pago ?? "").slice(0, 3000);
+      const { error } = await servicio.from("ajustes")
+        .upsert({ clave: "mensaje_pago", valor, actualizado_en: new Date().toISOString() });
+      return error ? json(req, { error: error.message }, 500) : json(req, { ok: true });
     }
 
     case "eliminar": {

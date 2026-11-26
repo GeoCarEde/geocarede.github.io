@@ -1,6 +1,6 @@
 // Cambia VERSION cada vez que subas código nuevo:
 // así los móviles descargan la versión nueva la próxima vez que abran la app.
-const VERSION = 'cctt-2026-11-26a';
+const VERSION = 'cctt-2026-11-26b';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'acceso.js', 'config.js', 'lib/leaflet.js', 'lib/leaflet.css', 'lib/supabase.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 const TILES = 'cctt-tiles';

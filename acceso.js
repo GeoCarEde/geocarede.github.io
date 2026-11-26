@@ -134,7 +134,13 @@
       });
     } catch (err) { btn.disabled = false; return aviso('Sin conexión. Inténtalo cuando tengas cobertura.', true); }
     btn.disabled = false;
-    if (r.ok) { e.target.reset(); return mostrar('enviada'); }
+    if (r.ok) {
+      let tg = null; try { tg = (await r.json()).telegram; } catch (err) {}
+      e.target.reset(); mostrar('enviada');
+      $('tg-enlace').hidden = !tg;
+      if (tg) $('tg-boton').href = tg;
+      return;
+    }
     let codigo = ''; try { codigo = (await r.json()).error; } catch (err) {}
     aviso({ email: 'Revisa el email.', telefono: 'Revisa el teléfono: pon al menos 9 cifras.', demasiadas: 'Ya has enviado varias solicitudes. Espera a que te contactemos.' }[codigo]
       || 'No se pudo enviar la solicitud. Inténtalo de nuevo.', true);

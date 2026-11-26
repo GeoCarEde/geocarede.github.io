@@ -5,7 +5,7 @@
 //   TELEGRAM_BOT_TOKEN  token del bot que da @BotFather
 //   TELEGRAM_CHAT_ID    tu identificador de chat de Telegram
 //   ADMIN_URL           (opcional) dirección del panel, para incluir el enlace en el aviso
-import { cors, json, servicio, telegram, tgChat, tgToken } from "../_shared/comun.ts";
+import { botUsuario, cors, json, servicio, telegram, tgChat, tgToken, tokenCorto, vincularMensaje } from "../_shared/comun.ts";
 
 const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
 const limpiar = (v: unknown, max: number) => String(v ?? "").replace(/[\u0000-\u001f]/g, " ").trim().slice(0, max);
@@ -39,8 +39,9 @@ Deno.serve(async (req) => {
   ]);
   if ((porEmail ?? 0) >= 3 || (porIp ?? 0) >= 10) return json(req, { error: "demasiadas" }, 429);
 
+  const tg_token = tokenCorto();
   const { data: fila, error } = await servicio.from("solicitudes")
-    .insert({ nombre, email, telefono, mensaje, ip }).select("id").single();
+    .insert({ nombre, email, telefono, mensaje, ip, tg_token }).select("id").single();
   if (error || !fila) return json(req, { error: "error_servidor" }, 500);
 
   // Aviso por Telegram con botones para aprobar o rechazar desde el propio chat.
@@ -56,13 +57,14 @@ Deno.serve(async (req) => {
       panel ? `\nPanel: ${panel}` : "",
     ].filter(Boolean).join("\n");
     try {
-      await telegram("sendMessage", {
+      const aviso = await telegram("sendMessage", {
         chat_id: tgChat(), text: texto, disable_web_page_preview: true,
-        reply_markup: { inline_keyboard: [[
-          { text: "✅ Aprobar", callback_data: `ap:${fila.id}` },
-          { text: "❌ Rechazar", callback_data: `re:${fila.id}` },
-        ]] },
+        reply_markup: { inline_keyboard: [
+          [{ text: "✅ Aprobar", callback_data: `ap:${fila.id}` }, { text: "❌ Rechazar", callback_data: `re:${fila.id}` }],
+          [{ text: "💳 Enviar mensaje de pago", callback_data: `pg:${fila.id}` }],
+        ] },
       });
+      await vincularMensaje(aviso, fila.id);
     } catch (e) {
       console.error("No se pudo avisar por Telegram", e);
     }
@@ -70,5 +72,7 @@ Deno.serve(async (req) => {
     console.warn("Faltan TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID: no se envía aviso");
   }
 
-  return json(req, { ok: true });
+  // Enlace para que el solicitante abra el bot y reciba la respuesta por Telegram
+  const bot = tgToken() ? await botUsuario() : null;
+  return json(req, { ok: true, telegram: bot ? `https://t.me/${bot}?start=s_${tg_token}` : null });
 });

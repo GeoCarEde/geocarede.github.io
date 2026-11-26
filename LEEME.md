@@ -27,6 +27,16 @@ El acceso es con email y clave. **Cada clave funciona en un solo dispositivo.**
 3. Pulsas **Aprobar** en Telegram, o en el panel. Se genera una clave y el bot te la envía con botones para reenviársela al usuario por WhatsApp o Telegram. Las solicitudes aprobadas desde Telegram no tienen caducidad; si quieres ponerle una, hazlo después en el panel.
 4. El usuario entra con su email y su clave. Ese dispositivo queda vinculado.
 
+## Mensaje de pago y conversación por Telegram
+
+- Al enviar la solicitud, la app ofrece **«Recibir respuesta por Telegram»**. Si el usuario lo pulsa y le da a «Iniciar», su Telegram queda conectado con el bot.
+- En el aviso de cada solicitud tienes el botón **💳 Enviar mensaje de pago**. El texto lo escribes en el panel, en la sección **Mensaje de pago**, y puedes usar `{nombre}`.
+  - Si el usuario conectó su Telegram, el bot se lo envía directamente.
+  - Si no, el bot te prepara el mensaje con botones para mandarlo por WhatsApp o abrir su Telegram por número.
+- Lo que el usuario escriba al bot (texto, fotos del justificante…) te llega a tu chat. **Si respondes con «Responder» a uno de esos mensajes, la respuesta le llega a él.**
+- Al aprobar (en Telegram o en el panel), si el usuario conectó su Telegram, el bot le envía la clave directamente.
+- Un bot de Telegram no puede escribir a alguien que no le haya escrito antes. Por eso hace falta que el usuario pulse el enlace.
+
 ## Panel: acciones sobre cada licencia
 
 - **Liberar dispositivo:** para cuando el usuario cambia de móvil o borra los datos del navegador.
