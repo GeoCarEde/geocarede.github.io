@@ -1,46 +1,64 @@
-# CCTT Granada: app web instalable
+# CCTT Granada
 
-Buscador de los centros de transformación, los elementos de maniobra y los apoyos de MT, con botones para ir hasta cada uno con la app de navegación del móvil.
+App web instalable para localizar centros de transformación, elementos de maniobra y apoyos de MT, y navegar hasta ellos.
+El acceso es con email y clave. **Cada clave funciona en un solo dispositivo.**
 
-## Qué hay en la carpeta
+## Cómo funciona
 
-| Archivo | Para qué sirve |
-|---|---|
-| `index.html`, `styles.css`, `app.js` | La app |
-| `data.json` | CT, elementos de maniobra y apoyos de MT (sale de los KMZ) |
-| `lib/` | Librería de mapas Leaflet 1.9.4 |
-| `manifest.webmanifest`, `icons/` | Hacen que se pueda instalar como app |
-| `sw.js` | Guarda la app en el móvil para que abra sin cobertura |
-| `herramientas/kmz_a_datos.py` | Regenera `data.json` cuando cambien los KMZ |
+| Pieza | Dónde está | Qué hace |
+|---|---|---|
+| App (`index.html`, `app.js`, `acceso.js`…) | GitHub Pages | Mapa, buscador y pantalla de acceso. **No contiene ubicaciones.** |
+| Panel (`admin/`) | GitHub Pages, en `/admin/` | Aprobar solicitudes, gestionar licencias, subir los KMZ |
+| Base de datos y funciones (`supabase/`) | Supabase | Usuarios, licencias, solicitudes y el archivo de ubicaciones |
 
-## Publicarla
+- Solo se publican el **código y la posición** de cada elemento. El panel lee los KMZ en tu ordenador y no sube nada más.
+- **Vinculación al dispositivo:** la primera vez que alguien entra, la app crea un identificador para ese dispositivo y el servidor lo guarda. Desde otro dispositivo, esa clave se rechaza.
+- **Sin cobertura:** la app sigue funcionando hasta 7 días desde la última comprobación de la licencia. Se cambia en `config.js`.
 
-Sube la carpeta entera a cualquier servidor web con **https**. Por ejemplo, el servidor de la empresa, GitHub Pages, Netlify o Cloudflare Pages.
-Sin https, el móvil no deja instalarla ni usar la ubicación.
+### Límites que hay que conocer
 
-Ojo: los datos son ubicaciones de infraestructura eléctrica. Si la dirección es pública, cualquiera que la conozca puede verlos.
-Si eso es un problema, publícala en un servidor interno o detrás de un acceso con usuario.
+- Un navegador no puede leer un identificador real del teléfono. Si el usuario **borra los datos del navegador o reinstala la app**, el sistema lo ve como un dispositivo nuevo y lo rechaza. Para arreglarlo, pulsa **Liberar dispositivo** en el panel.
+- Alguien con conocimientos técnicos podría copiar las ubicaciones una vez descargadas en su dispositivo. Se puede dificultar, pero no impedir del todo.
 
-## Instalarla en el móvil
+## Flujo de alta
 
-- **Android (Chrome):** abre la dirección, pulsa ⋮ y luego «Instalar aplicación» o «Añadir a pantalla de inicio».
-- **iPhone (Safari):** abre la dirección, pulsa Compartir y luego «Añadir a pantalla de inicio».
+1. El usuario rellena **Solicitar acceso** en la app con su nombre, email y teléfono.
+2. Te llega un **aviso por Telegram**.
+3. En el panel pulsas **Aprobar**. Se genera una clave, que puedes enviarle por WhatsApp o Telegram desde el propio panel.
+4. El usuario entra con su email y su clave. Ese dispositivo queda vinculado.
 
-## Actualizar los datos
+## Panel: acciones sobre cada licencia
 
-1. Ejecuta `python3 herramientas/kmz_a_datos.py data.json CDs.kmz Elementos_de_maniobra.kmz Apoyos_MT.kmz`.
-   Puedes pasarle solo alguno de los KMZ: las demás capas se conservan como estaban.
-2. En `sw.js`, cambia `VERSION` (por ejemplo, pon la fecha del día).
-3. Sube `data.json` y `sw.js` al servidor. Los móviles cogen la versión nueva al volver a abrir la app.
+- **Liberar dispositivo:** para cuando el usuario cambia de móvil o borra los datos del navegador.
+- **Desactivar / Activar:** corta o devuelve el acceso. Si se desactiva, en cuanto el usuario abra la app con conexión pierde el acceso y se borra la copia local.
+- **Caduca:** fecha a partir de la cual deja de funcionar (para suscripciones).
+- **Nueva clave**, **Eliminar**.
 
-## Capas
+## Actualizar las ubicaciones
 
-- **CT Endesa** y **CT externos** salen encendidas al abrir la app.
-- **Maniobra** y **Apoyos MT** salen apagadas. Al encenderlas solo se dibujan los de la zona visible, con el mapa acercado.
-- El buscador encuentra elementos de todas las capas, estén encendidas o no.
+En el panel, sección **Ubicaciones**:
+1. Elige **los tres KMZ a la vez**.
+2. Pulsa **Leer archivos** y revisa los números.
+3. Pulsa **Publicar**.
 
-## Mapa de fondo
+Los usuarios reciben los datos nuevos la próxima vez que abren la app.
 
-- Por defecto se usa el **Mapa base del IGN** y, con el botón de capas, la **ortofoto PNOA**. Las dos tienen licencia CC BY 4.0 del Instituto Geográfico Nacional.
-- Si el IGN no responde, la app pasa sola a OpenStreetMap.
-- Las zonas del mapa que ya se han visto quedan guardadas en el móvil (hasta unos 3.000 trozos), para cuando no hay cobertura.
+## Puesta en marcha (una sola vez)
+
+1. **Supabase:** crear el proyecto, aplicar `supabase/migrations/0001_licencias.sql` y desplegar las funciones `datos`, `admin` y `solicitud`.
+2. **`config.js`:** poner la URL del proyecto y la *anon key* (Settings → API).
+3. **Administrador:** en Supabase, *Authentication → Users → Add user* (con email y contraseña). Después ejecuta en el *SQL Editor*:
+   `insert into public.admins (user_id) select id from auth.users where email = 'TU_EMAIL';`
+4. **Desactivar el registro libre:** *Authentication → Sign In / Providers → Allow new users to sign up* → desactivado. Las altas solo se hacen desde el panel.
+5. **Telegram:**
+   1. Habla con **@BotFather**, crea un bot (`/newbot`) y copia el token.
+   2. Escribe cualquier cosa a tu bot.
+   3. Abre `https://api.telegram.org/bot<TOKEN>/getUpdates` y copia `chat.id`.
+   4. En Supabase, *Edge Functions → Secrets*, crea `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` y, si quieres, `ADMIN_URL` (la dirección del panel).
+6. **(Opcional)** Crea el secreto `ORIGENES_PERMITIDOS` con `https://jmmoreno0786.github.io` para que solo tu app pueda llamar a las funciones.
+7. Entra en el panel y **publica las ubicaciones** subiendo los KMZ.
+
+## Instalar la app en el móvil
+
+- **Android (Chrome):** pulsa ⋮ y luego «Instalar aplicación».
+- **iPhone (Safari):** pulsa Compartir y luego «Añadir a pantalla de inicio».

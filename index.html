@@ -25,7 +25,7 @@
   <div id="top">
     <div class="searchbox">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" inputmode="search" autocomplete="off" spellcheck="false" placeholder="CT, maniobra, apoyo, línea MT…" aria-label="Buscar centro de transformación, elemento de maniobra o apoyo">
+      <input id="q" type="search" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Código de CT, maniobra o apoyo" aria-label="Buscar centro de transformación, elemento de maniobra o apoyo">
       <button class="iconbtn" id="clear" type="button" aria-label="Borrar búsqueda" hidden>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
@@ -46,14 +46,64 @@
     <button class="iconbtn" id="b-loc" type="button" aria-label="Centrar en mi ubicación" title="Mi ubicación">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
     </button>
+    <button class="iconbtn" id="b-salir" type="button" aria-label="Cerrar sesión" title="Cerrar sesión">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5M5 12h11"/></svg>
+    </button>
   </div>
 
   <div id="sheet" hidden aria-live="polite"></div>
   <div id="tilenote" hidden>Sin conexión: el mapa de fondo no carga. El buscador y los puntos funcionan.</div>
   <div id="toast" hidden></div>
 </div>
+
+<div id="acceso" hidden>
+  <div class="acceso-caja">
+    <div class="marca"><img src="icons/icon-192.png" alt="" width="44" height="44"><div><strong>CCTT Granada</strong><span>Localiza centros de transformación, maniobras y apoyos y navega hasta ellos.</span></div></div>
+    <div class="pestanas" role="tablist">
+      <button id="t-entrar" type="button" role="tab" aria-selected="true">Entrar</button>
+      <button id="t-solicitar" type="button" role="tab" aria-selected="false">Solicitar acceso</button>
+    </div>
+    <p id="acceso-aviso" role="status" hidden></p>
+
+    <div id="v-entrar">
+      <form id="f-entrar" autocomplete="on">
+        <label for="a-email">Email</label>
+        <input id="a-email" type="email" autocomplete="username" required>
+        <label for="a-clave">Clave</label>
+        <input id="a-clave" type="password" autocomplete="current-password" required>
+        <button class="navbtn primary" type="submit">Entrar</button>
+      </form>
+      <p class="hint">Cada clave funciona en un solo dispositivo: queda vinculada al primero en el que entres.</p>
+    </div>
+
+    <div id="v-solicitar" hidden>
+      <form id="f-solicitar">
+        <label for="s-nombre">Nombre</label>
+        <input id="s-nombre" type="text" autocomplete="name" maxlength="120">
+        <label for="s-email">Email</label>
+        <input id="s-email" type="email" autocomplete="email" required maxlength="254">
+        <label for="s-telefono">Teléfono</label>
+        <input id="s-telefono" type="tel" autocomplete="tel" required maxlength="30" placeholder="600 000 000">
+        <label for="s-mensaje">Mensaje <span class="opc">(opcional)</span></label>
+        <textarea id="s-mensaje" rows="2" maxlength="500"></textarea>
+        <input id="s-web" type="text" name="web" tabindex="-1" autocomplete="off" class="trampa" aria-hidden="true">
+        <button class="navbtn primary" type="submit">Enviar solicitud</button>
+      </form>
+      <p class="hint">Revisaremos tu solicitud y te enviaremos la clave.</p>
+    </div>
+
+    <div id="v-enviada" hidden>
+      <p class="ok">Solicitud enviada. Te contactaremos con tu clave de acceso.</p>
+      <button id="otra-solicitud" class="navbtn" type="button">Ya tengo clave: entrar</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
 <script src="lib/leaflet.js"></script>
+<script src="lib/supabase.js"></script>
 <script src="app.js"></script>
+<script src="acceso.js"></script>
 <script>
 if ('serviceWorker' in navigator){
   // When a new version takes over, reload once so code and data match

@@ -1,4 +1,4 @@
-fetch('data.json', {cache:'no-cache'}).then(r => r.json()).then(function(DATA){
+window.startApp = function(DATA){
 const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[\s_\-.]+/g,'');
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const G = DATA.groups;
@@ -267,4 +267,5 @@ function fromHash(){
   const ct = all.find(c => c.code.replace(/[^A-Za-z0-9-]/g,'') === m[1]); if (ct && ct !== selected) select(ct, true);
 }
 window.addEventListener('hashchange', fromHash); fromHash();
-}).catch(e => { document.getElementById('tilenote').textContent = 'No se pudieron cargar los datos. Comprueba la conexión y vuelve a abrir la app.'; document.getElementById('tilenote').hidden = false; });
+document.getElementById('b-salir').addEventListener('click', () => window.cerrarSesion && window.cerrarSesion());
+};
