@@ -2,7 +2,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // Orígenes desde los que se puede llamar a las funciones. Por defecto cualquiera;
 // para limitarlo, crea el secreto ORIGENES_PERMITIDOS con la dirección de la app
-// (por ejemplo «https://jmmoreno0786.github.io»), separando varias con comas.
+// (por ejemplo «https://geocarede.github.io»), separando varias con comas.
 const ORIGENES = (Deno.env.get("ORIGENES_PERMITIDOS") ?? "*").split(",").map((s) => s.trim());
 
 export function cors(req: Request): Record<string, string> {
@@ -77,7 +77,7 @@ export async function altaUsuario(email: string, nombre: string | null, telefono
 // Limpia errores típicos al copiar el token: espacios, saltos de línea o la palabra «bot» delante
 export const tgToken = () => (Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "").replace(/\s+/g, "").replace(/^bot(?=\d)/i, "");
 export const tgChat = () => (Deno.env.get("TELEGRAM_CHAT_ID") ?? "").replace(/\s+/g, "");
-export const APP_URL = Deno.env.get("APP_URL") ?? "https://jmmoreno0786.github.io/GEO-CAR-EDE/";
+export const APP_URL = Deno.env.get("APP_URL") ?? "https://geocarede.github.io/";
 
 export async function telegram(metodo: string, datos: Record<string, unknown>) {
   const token = tgToken();

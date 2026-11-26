@@ -1,5 +1,7 @@
 # CCTT Granada
 
+Dirección de la app: **https://geocarede.github.io/** · Panel: **https://geocarede.github.io/admin/**
+
 App web instalable para localizar centros de transformación, elementos de maniobra y apoyos de MT, y navegar hasta ellos.
 El acceso es con email y clave. **Cada clave funciona en un solo dispositivo.**
 
@@ -66,7 +68,7 @@ Los usuarios reciben los datos nuevos la próxima vez que abren la app.
    3. Abre `https://api.telegram.org/bot<TOKEN>/getUpdates` y copia `chat.id`.
    4. En Supabase, *Edge Functions → Secrets*, crea `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` y, si quieres, `ADMIN_URL` (la dirección del panel).
    5. Para activar los botones, abre una vez `https://<proyecto>.supabase.co/functions/v1/telegram?accion=configurar`. **Si cambias el token del bot, vuelve a abrir esa dirección.**
-6. **(Opcional)** Crea el secreto `ORIGENES_PERMITIDOS` con `https://jmmoreno0786.github.io` para que solo tu app pueda llamar a las funciones.
+6. **(Opcional)** Crea el secreto `ORIGENES_PERMITIDOS` con `https://geocarede.github.io` para que solo tu app pueda llamar a las funciones.
 7. Entra en el panel y **publica las ubicaciones** subiendo los KMZ.
 
 ## Instalar la app en el móvil
